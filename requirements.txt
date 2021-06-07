@@ -1,0 +1,16 @@
+backcall==0.2.0
+colorama==0.4.4
+decorator==5.0.7
+flake8==3.9.1
+ipython-genutils==0.2.0
+jedi==0.18.0
+keyboard==0.13.5
+mccabe==0.6.1
+parso==0.8.2
+pickleshare==0.7.5
+pycodestyle==2.7.0
+pyflakes==2.3.1
+Pygments==2.9.0
+tinydb==4.4.0
+traitlets==5.0.5
+wcwidth==0.2.5
