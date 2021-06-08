@@ -160,14 +160,8 @@ class Tournament(Model):
         tournament_list = Collection(cls.__table__.search(where('id') != 0))
         return tournament_list
 
-    @classmethod
-    def enter_results(cls):
-        T = Query()
-        tournaments = Collection(cls.__table__.search(where('id') != 0))
-        for tournament in tournaments.items:
-            print(f"id: {tournament.id.value}, name: {tournament.name.value}")
-        
-        tournament_id_user_choice = int(input())
+    @classmethode
+    def get_game_list(cls, tournament_id_user_choice):
         chosen_tournament = Collection(cls.__table__.search(where('id') == tournament_id_user_choice))
         db.table('tournaments').update(increment('nb_of_played_round'), where("id") == int(tournament_id_user_choice))
         round_id = chosen_tournament.items[0].nb_of_played_round.value
@@ -175,19 +169,41 @@ class Tournament(Model):
       
         rounds = TournamentCollection(db.table('rounds').search(where("tournament_id") == tournament_id_user_choice 
                                                                 and where("round_id") == round_id))
+        
         if len(rounds.items) == 0:
             return None, "rounds.items est vide", tournament_id_user_choice, round_id
-        matchs = RoundCollection(db.table('matchs').search(T.round_id == rounds.items[0].round_id.value))
-        print(matchs.items)
-        matchs_results = []
-        for match in matchs.items:
-            print(f"{match.match_id.value}: {match.joueur1.value} vs {match.joueur2.value}")
+        games_list = RoundCollection(db.table('matchs').search(T.round_id == rounds.items[0].round_id.value))
+        return games_list
+
+    @classmethod
+    def enter_results(cls, tournament_id_user_choice):
+        T = Query()
+        # tournaments = Collection(cls.__table__.search(where('id') != 0))
+        # for tournament in tournaments.items:
+        #     print(f"id: {tournament.id.value}, name: {tournament.name.value}")
+        
+        # tournament_id_user_choice = int(input())
+        # chosen_tournament = Collection(cls.__table__.search(where('id') == tournament_id_user_choice))
+        # db.table('tournaments').update(increment('nb_of_played_round'), where("id") == int(tournament_id_user_choice))
+        # round_id = chosen_tournament.items[0].nb_of_played_round.value
+        
+      
+        # rounds = TournamentCollection(db.table('rounds').search(where("tournament_id") == tournament_id_user_choice 
+        #                                                         and where("round_id") == round_id))
+        # if len(rounds.items) == 0:
+        #     return None, "rounds.items est vide", tournament_id_user_choice, round_id
+        # matchs = RoundCollection(db.table('matchs').search(T.round_id == rounds.items[0].round_id.value))
+        # print(matchs.items)
+        # matchs_results = []
+        # for match in matchs.items:
+        #     print(f"{match.match_id.value}: {match.joueur1.value} vs {match.joueur2.value}")
+        
         while True:
             match_id_user_choice = input()
             if match_id_user_choice == 'q'.upper():
                 db.table('rounds').update({"games": matchs_results}, (where("tournament_id") == tournament_id_user_choice) &
                                                             (where("round_id") == round_id))
-                print(matchs_results)
+                # print(matchs_results)
                 break
             match_id, player_one_score, player_two_score = list(map(float, match_id_user_choice.split(" ")))
             player_one_id = db.table('matchs').search(where("match_id") == int(match_id))[0]["joueur1"]
@@ -220,6 +236,11 @@ class Tournament(Model):
         
         
         # récupérer le match, mettre à jour les scores, sauvegarder le match à nouveau. 
+    @classmethod
+    def save_results(cls, matchs_results, round_id, tournament_id_user_choice):
+        db.table('rounds').update({"games": matchs_results}, (where("tournament_id") == tournament_id_user_choice) &
+                                                            (where("round_id") == round_id))
+    
     
     @classmethod
     def get_tournament_score(cls, player_id, tournament_id):

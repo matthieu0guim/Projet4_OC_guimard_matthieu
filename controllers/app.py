@@ -14,6 +14,7 @@ class AppController:
     
     @classmethod
     def generate_tour(cls):
+        tournament_list = Tournament.get_tournament_list()
         tournament_id = int(Views.generate_round_view())
         round = Tournament.generate_round(tournament_id)
         return Views.show_generated_round(round)
@@ -22,7 +23,13 @@ class AppController:
     def set_tour_results(cls):
         tournament_list = Tournament.get_tournament_list()
         tournament_id_user_choice = Views.enter_results_view(tournament_list)
-        
+        games_list = Tournament.get_game_list(tournament_id_user_choice)
+        matchs_results = []
+        while True:
+            match_id = Views.get_round_result_view(games_list, matchs_results)
+            if match_id == "q" or match_id == "Q":
+                Tournament.save_results(matchs_results, round_id, tournament_id_user_choice)
+
 
     
     @classmethod
