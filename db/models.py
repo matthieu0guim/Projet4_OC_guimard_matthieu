@@ -94,10 +94,11 @@ class Tournament(Model):
         tournament = cls.__table__.search(where('id') == tournament_id)
 
         collection = Collection(data=Player.__table__.search(P.id.one_of(tournament[0]["players"]))) # on crée notre liste  d'objets players participant au tournoi
-        # print(collection.items)
+        
         players = sorted(collection.items, key=lambda x: (Tournament.get_tournament_score(x.id.value,tournament_id), x.elo.value),
                                                                                           reverse=True) # on trie cette liste avec l'elo comme critère de trie.
-
+        for player in players:
+            setattr(player, 'tournament_score', Tournament.get_tournament_score(player.id.value,tournament_id))
         return players # on renvoie la liste triée par l'elo des joueurs participants au tournoi.
 
     @classmethod
@@ -108,25 +109,25 @@ class Tournament(Model):
         return Tournament.list_of_possible_games
 
     @classmethod
-    def generate_round(cls, tournament_id):
-        if db.table('tournaments').search(where('id') == tournament_id)[0]['nb_of_played_round'] == db.table('tournaments').search(where('id') == tournament_id)[0]['nb_rounds']:
+    def generate_round(cls, tournament_id_user_choice):
+        if db.table('tournaments').search(where('id') == tournament_id_user_choice)[0]['nb_of_played_round'] == db.table('tournaments').search(where('id') == tournament_id_user_choice)[0]['nb_rounds']:
             print("Votre tournoi est terminé. Il n'est plus possible de jouer de tours supplémentaires.")
             return None
         
-        count_rounds = db.table('tournaments').search(where('id') == tournament_id)[0]['nb_of_played_round']
+        count_rounds = db.table('tournaments').search(where('id') == tournament_id_user_choice)[0]['nb_of_played_round']
         round_id = len(db.table('rounds')) + 1
                
         is_first_round = count_rounds == 0
         if is_first_round:
-            all_possible_games = Tournament.listing_all_possible_games(tournament_id)
-            cls.__table__.update({"list_of_possible_games": all_possible_games}, where("id") == tournament_id)
+            all_possible_games = Tournament.listing_all_possible_games(tournament_id_user_choice)
+            cls.__table__.update({"list_of_possible_games": all_possible_games}, where("id") == tournament_id_user_choice)
         Round.create({
             'round_id': round_id,
-            'tournament_id': tournament_id,
+            'tournament_id': tournament_id_user_choice,
             'beginning_date': str(datetime.now())
         })
  
-        players = Tournament.get_players(tournament_id)
+        players = Tournament.get_players(tournament_id_user_choice)
         match = []
         
         top = 0
@@ -148,11 +149,11 @@ class Tournament(Model):
             top += 1
             bottom += 1
         
-        db.table('rounds').update({"games": match}, (where("tournament_id") == tournament_id)
+        db.table('rounds').update({"games": match}, (where("tournament_id") == tournament_id_user_choice)
                                                     & (where("round_id") == round_id))
-        round = db.table('rounds').search((where("tournament_id") == tournament_id)
+        round = db.table('rounds').search((where("tournament_id") == tournament_id_user_choice)
                                                     & (where("round_id") == round_id))
-        db.table('tournaments').update({'rounds': round_id}, where("id") == tournament_id)
+        db.table('tournaments').update({'rounds': round_id}, where("id") == tournament_id_user_choice)
         return round
 
     @classmethod
@@ -160,8 +161,9 @@ class Tournament(Model):
         tournament_list = Collection(cls.__table__.search(where('id') != 0))
         return tournament_list
 
-    @classmethode
+    @classmethod
     def get_game_list(cls, tournament_id_user_choice):
+        T = Query()
         chosen_tournament = Collection(cls.__table__.search(where('id') == tournament_id_user_choice))
         db.table('tournaments').update(increment('nb_of_played_round'), where("id") == int(tournament_id_user_choice))
         round_id = chosen_tournament.items[0].nb_of_played_round.value
@@ -169,73 +171,41 @@ class Tournament(Model):
       
         rounds = TournamentCollection(db.table('rounds').search(where("tournament_id") == tournament_id_user_choice 
                                                                 and where("round_id") == round_id))
-        
+        print('la')
+        print(rounds.items)
         if len(rounds.items) == 0:
             return None, "rounds.items est vide", tournament_id_user_choice, round_id
+        print('re')
         games_list = RoundCollection(db.table('matchs').search(T.round_id == rounds.items[0].round_id.value))
-        return games_list
+        print('ici', games_list, round_id)
+        return games_list, round_id
 
     @classmethod
-    def enter_results(cls, tournament_id_user_choice):
-        T = Query()
-        # tournaments = Collection(cls.__table__.search(where('id') != 0))
-        # for tournament in tournaments.items:
-        #     print(f"id: {tournament.id.value}, name: {tournament.name.value}")
+    def enter_results(cls, tournament_id_user_choice, round_id, match_id, player_one_score, player_two_score, matchs_results):
+        player_one_id = db.table('matchs').search(where("match_id") == int(match_id))[0]["joueur1"]
+        player_two_id = db.table('matchs').search(where("match_id") == int(match_id))[0]["joueur2"]
         
-        # tournament_id_user_choice = int(input())
-        # chosen_tournament = Collection(cls.__table__.search(where('id') == tournament_id_user_choice))
-        # db.table('tournaments').update(increment('nb_of_played_round'), where("id") == int(tournament_id_user_choice))
-        # round_id = chosen_tournament.items[0].nb_of_played_round.value
+        db.table('matchs').update({'score_one': player_one_score}, (where('match_id') == match_id) & (where('round_id') == round_id))
+        db.table('matchs').update({'score_two': player_two_score}, (where('match_id') == match_id) & (where('round_id') == round_id))
         
-      
-        # rounds = TournamentCollection(db.table('rounds').search(where("tournament_id") == tournament_id_user_choice 
-        #                                                         and where("round_id") == round_id))
-        # if len(rounds.items) == 0:
-        #     return None, "rounds.items est vide", tournament_id_user_choice, round_id
-        # matchs = RoundCollection(db.table('matchs').search(T.round_id == rounds.items[0].round_id.value))
-        # print(matchs.items)
-        # matchs_results = []
-        # for match in matchs.items:
-        #     print(f"{match.match_id.value}: {match.joueur1.value} vs {match.joueur2.value}")
+        if [player_one_id,player_two_id] in db.table('tournaments').search(where("id") == tournament_id_user_choice)[0]["list_of_possible_games"]:
+            db.table('tournaments').search(where("id") == tournament_id_user_choice)[0]["list_of_possible_games"].remove([player_one_id, player_two_id])
+            list_of_possible_games = db.table('tournaments').search(where("id") == tournament_id_user_choice)[0]["list_of_possible_games"]
+            db.table('tournaments').update({"list_of_possible_games": list_of_possible_games}, where("id") == tournament_id_user_choice)
         
-        while True:
-            match_id_user_choice = input()
-            if match_id_user_choice == 'q'.upper():
-                db.table('rounds').update({"games": matchs_results}, (where("tournament_id") == tournament_id_user_choice) &
-                                                            (where("round_id") == round_id))
-                # print(matchs_results)
-                break
-            match_id, player_one_score, player_two_score = list(map(float, match_id_user_choice.split(" ")))
-            player_one_id = db.table('matchs').search(where("match_id") == int(match_id))[0]["joueur1"]
-            player_two_id = db.table('matchs').search(where("match_id") == int(match_id))[0]["joueur2"]
-            
-            db.table('matchs').update({'score_one': player_one_score}, (where('match_id') == match_id) & (where('round_id') == round_id))
-            db.table('matchs').update({'score_two': player_two_score}, (where('match_id') == match_id) & (where('round_id') == round_id))
-            
-            if [player_one_id,player_two_id] in db.table('tournaments').search(where("id") == tournament_id_user_choice)[0]["list_of_possible_games"]:
-                db.table('tournaments').search(where("id") == tournament_id_user_choice)[0]["list_of_possible_games"].remove([player_one_id, player_two_id])
-                list_of_possible_games = db.table('tournaments').search(where("id") == tournament_id_user_choice)[0]["list_of_possible_games"]
-                db.table('tournaments').update({"list_of_possible_games": list_of_possible_games}, where("id") == tournament_id_user_choice)
-            
-            
-            game = Match(player_one_id, player_two_id, player_one_score, player_two_score, match_id_user_choice)
-            
-            already_in = False
-            for n, match in enumerate(matchs_results):
-                if f"[{player_one_id}" in match:
-                    matchs_results.pop(n)
-                    already_in = True
-                    matchs_results.insert(n, game.to_json())
+        game = Match(player_one_id, player_two_id, player_one_score, player_two_score, match_id)
+        
+        already_in = False
+        for n, match in enumerate(matchs_results):
+            if f"[{player_one_id}" in match:
+                matchs_results.pop(n)
+                already_in = True
+                matchs_results.insert(n, game.to_json())
 
-            if not already_in:
-                matchs_results.append(game.to_json())
-            # TODO fixer ce problème de doublement d'un match dont le résultat est saisi deux fois
-            # TODO faire une boucle pour vérifier si le match n'a pas déjà un résultat, si oui refaire un nouveau tableau e nsupprimant la ligne du match déjà existante et la remplacer par la nouvelle
-        
-        
-        
-        
-        # récupérer le match, mettre à jour les scores, sauvegarder le match à nouveau. 
+        if not already_in:
+            matchs_results.append(game.to_json())
+           
+         
     @classmethod
     def save_results(cls, matchs_results, round_id, tournament_id_user_choice):
         db.table('rounds').update({"games": matchs_results}, (where("tournament_id") == tournament_id_user_choice) &
@@ -255,7 +225,6 @@ class Tournament(Model):
             score_liste = [d['score_one'] if id_liste[-1] == 'joueur1' else d['score_two']]
             tournament_score += score_liste[-1]
         
-        # print(f"joueur {player_id}: {tournament_score}")
         return tournament_score
 
     @classmethod
@@ -277,11 +246,6 @@ class Tournament(Model):
         # afficher la liste des joueurs, on choisit le joueur, spécifier le nouveau elo, tant qua pas appuyé sur Q: FINIE
         # TODO : tout ce qui est affichage à l'écran devra être déplacé dans VIEWS
     
-    @classmethod
-    def get_provisional_ranking(cls, tournament_id):
-
-        players = Tournament.get_players(tournament_id)
-        return players
 
 
 class Player(Model):
