@@ -7,6 +7,8 @@ class AppController:
 
     @classmethod
     def create_tournament(cls, attrs):
+        id = Tournament.set_tournament_id()
+        attrs["id"] = id
         Tournament.create(attrs)
 # TODO faire une vue pour créer le tournoi
     @classmethod

@@ -87,6 +87,10 @@ class Tournament(Model):
         super().__init__()
 
     @classmethod
+    def set_tournament_id(cls):
+        return len(cls.__table__) + 1
+
+    @classmethod
     def set_players(cls, tournament_id, player_ids):
         cls.__table__.update({'players': player_ids}, where('id') == tournament_id)
 
