@@ -3,7 +3,7 @@ import json
 
 from datetime import datetime
 from tinydb import TinyDB, where, Query
-from tinydb.operations import increment
+from tinydb.operations import increment, add
 
 
 class Field:
@@ -228,6 +228,23 @@ class Tournament(Model):
 
         game = Match(player_one_id, player_two_id, player_one_score, player_two_score, match_id)
 
+        if db.table('scores').get((where('tournament_id') == tournament_id) & (where("player_id") == player_one_id)):
+            db.table('scores').update(add("score", player_one_score), (where('player_id') == player_one_id) & 
+                                                                       (where('tournament_id') == tournament_id))
+            db.table('scores').update(add("score", player_two_score), (where('player_id') == player_two_id) & 
+                                                                       (where('tournament_id') == tournament_id))
+        else:
+            Score.create({
+                "player_id": player_one_id,
+                "tournament_id": tournament_id,
+                "score": player_one_score
+            })
+            Score.create({
+                "player_id": player_two_id,
+                "tournament_id": tournament_id,
+                "score": player_two_score
+            })
+
         already_in = False
         for n, match in enumerate(matchs_results):
             if f"[{player_one_id}" in match:
@@ -247,17 +264,21 @@ class Tournament(Model):
     @classmethod
     def get_tournament_score(cls, player_id, tournament_id):
 
-        tournament_score = 0
-        if db.table('matchs').search((where('joueur1') == player_id) |
-                                     (where('joueur2') == player_id)) == []:
+        # tournament_score = 0
+        # if db.table('matchs').search((where('joueur1') == player_id) |
+        #                              (where('joueur2') == player_id)) == []:
+        #     return 0
+        # for d in db.table('matchs').search((where('joueur1') == player_id) |
+        #                                    (where('joueur2') == player_id)):
+        #     id_liste = [k for k, v in d.items() if v == player_id and 'joueur' in k]
+        #     score_liste = [d['score_one'] if id_liste[-1] == 'joueur1' else d['score_two']]
+        #     tournament_score += score_liste[-1]
+        if not db.table('scores').search(where('tournament_id') == tournament_id):
             return 0
-        for d in db.table('matchs').search((where('joueur1') == player_id) |
-                                           (where('joueur2') == player_id)):
-            id_liste = [k for k, v in d.items() if v == player_id and 'joueur' in k]
-            score_liste = [d['score_one'] if id_liste[-1] == 'joueur1' else d['score_two']]
-            tournament_score += score_liste[-1]
 
-        return tournament_score
+        tournament_score = db.table('scores').get((where('player_id') == player_id) & 
+                                                    (where('tournament_id') == tournament_id))
+        return tournament_score["score"]
 
     @classmethod
     def change_player_elo(cls, player_choice, new_elo):
@@ -317,3 +338,16 @@ class Round(Model):
 
     def __repr__(self):
         return f"{self.list_of_match}"
+
+
+class Score(Model):
+    __table__ = db.table('scores')
+
+    def __init__(self, player_id, tournament_id, score=None):
+        super().__init__()
+        self.tournament_id = tournament_id
+        self.player_id = player_id
+        self.score = score
+    
+    # def __repr__(self):
+    #     return f"Joueur {self.player_id}, tournoi: {self.tournament_id}"
