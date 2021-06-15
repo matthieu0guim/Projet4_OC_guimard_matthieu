@@ -180,7 +180,7 @@ class Tournament(Model):
         round = db.table('rounds').get((where("tournament_id") == tournament_id)
                                        & (where("round_id") == round_id))
         rounds = cls.__table__.get(where("id") == tournament_id)["rounds"]
-        print(rounds)
+        
         rounds.append(round_id)
         db.table('tournaments').update({'rounds': rounds},
                                        where("id") == tournament_id)
@@ -242,11 +242,15 @@ class Tournament(Model):
         game = Match(player_one_id, player_two_id, player_one_score, player_two_score, match_id)
 
         if db.table('scores').get((where('tournament_id') == tournament_id) & (where("player_id") == player_one_id)):
+            print("player_one_score", player_one_score)
+            print("player_two_score", player_two_score)
             db.table('scores').update(add("score", player_one_score), (where('player_id') == player_one_id) & 
                                                                        (where('tournament_id') == tournament_id))
             db.table('scores').update(add("score", player_two_score), (where('player_id') == player_two_id) & 
                                                                        (where('tournament_id') == tournament_id))
         else:
+            print("player_one_score", player_one_score)
+            print("player_two_score", player_two_score)
             Score.create({
                 "player_id": player_one_id,
                 "tournament_id": tournament_id,
@@ -270,6 +274,7 @@ class Tournament(Model):
 
     @classmethod
     def save_results(cls, matchs_results, round_id, tournament_id_user_choice):
+        print(matchs_results)
         db.table('rounds').update({"games": matchs_results},
                                   (where("tournament_id") == tournament_id_user_choice) &
                                   (where("round_id") == round_id))
