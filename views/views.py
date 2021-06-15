@@ -21,7 +21,7 @@ class Views:
             tournament_id_user_choice = input()
             return tournament_id_user_choice
         elif not generate_round and checking_ranking:
-            print('Quel tournoi vous intéresse?')
+            print('Quel tournoi?')
             tournament_id_user_choice = input()
             return tournament_id_user_choice
         print("Pour quel tournoi voulez-vous générer un round?\n")
@@ -75,3 +75,18 @@ class Views:
             if new_elo >= 0:
                 return new_elo
             print("La valeur rentrée n'est pas correcte.")
+
+    @staticmethod
+    def get_tournament_players():
+        players = []
+        while True:
+            player = input() # ressenti: un utilisateur ne rentrera jamais l'id d'un joueur mais son nom...
+            if player.upper() == "Q":
+                if len(players) % 2 != 0:
+                    print(f"Il faut un nombre paire de joueur. Veuillez renseigner un autre joueur."
+                          f"Pour corriger une erreur, rentrer l'id n°1 et relancez la saisie des joueurs")
+                    continue
+                break
+            players.append(int(player))
+        
+        return players

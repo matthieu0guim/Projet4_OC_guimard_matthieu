@@ -10,7 +10,15 @@ class AppController:
         id = Tournament.set_tournament_id()
         attrs["id"] = id
         Tournament.create(attrs)
-# TODO faire une vue pour créer le tournoi
+    
+    @classmethod
+    def set_tournament_players(cls):
+        tournament_list = Tournament.get_tournament_list()
+        tournament_id_user_choice = int(
+            Views.tournament_choice_view(tournament_list, checking_ranking=True))
+        players = Views.get_tournament_players()
+        Tournament.set_tournament_nb_of_round(players, tournament_id_user_choice)
+            # TODO faire une vue pour créer le tournoi
     @classmethod
     def create_player(cls, attrs):
         Player.create(attrs)

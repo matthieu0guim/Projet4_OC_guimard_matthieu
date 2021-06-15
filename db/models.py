@@ -89,6 +89,12 @@ class Tournament(Model):
     @classmethod
     def set_tournament_id(cls):
         return len(cls.__table__) + 1
+    
+    @classmethod
+    def set_tournament_nb_of_round(cls, players, tournament_id):
+
+        cls.__table__.update({"nb_rounds": int(len(players) -1)}, where("id") == tournament_id)
+        cls.__table__.update({"players": players})
 
     @classmethod
     def set_players(cls, tournament_id, player_ids):
@@ -173,7 +179,10 @@ class Tournament(Model):
                                   & (where("round_id") == round_id))
         round = db.table('rounds').get((where("tournament_id") == tournament_id)
                                        & (where("round_id") == round_id))
-        db.table('tournaments').update({'rounds': round_id},
+        rounds = cls.__table__.get(where("id") == tournament_id)["rounds"]
+        print(rounds)
+        rounds.append(round_id)
+        db.table('tournaments').update({'rounds': rounds},
                                        where("id") == tournament_id)
         return round
 
@@ -267,16 +276,6 @@ class Tournament(Model):
 
     @classmethod
     def get_tournament_score(cls, player_id, tournament_id):
-
-        # tournament_score = 0
-        # if db.table('matchs').search((where('joueur1') == player_id) |
-        #                              (where('joueur2') == player_id)) == []:
-        #     return 0
-        # for d in db.table('matchs').search((where('joueur1') == player_id) |
-        #                                    (where('joueur2') == player_id)):
-        #     id_liste = [k for k, v in d.items() if v == player_id and 'joueur' in k]
-        #     score_liste = [d['score_one'] if id_liste[-1] == 'joueur1' else d['score_two']]
-        #     tournament_score += score_liste[-1]
         if not db.table('scores').search(where('tournament_id') == tournament_id):
             return 0
 
