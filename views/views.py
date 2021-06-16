@@ -1,7 +1,56 @@
 from controllers.app import AppController
+from datetime import datetime
+from time import strftime
 
 class Views:
+    @staticmethod
+    def create_tournament_view():
+        players = []
+        tournament_info = {}
+        
+        print("Vous devez renseigner les informations suivantes:")
+        print("Nom du tournoi:")
+        tournament_info["name"] = input()
+        print("Lieu:")
+        tournament_info["location"] = input()
+        print("Commentaires:")
+        tournament_info["description"] = input()
+        print("nombre de tours:")
+        tournament_info["nb_rounds"] = input()
+        print("Joueurs participant:")
+        while True:
+            player = int(input())
+            players.append(player)
+            if len(players) == 8:
+                tournament_info["players"] = players
+                break
+            else:
+                pass
+        print("Quels types de parties seront jouées?")
+        print("bullet, blitz, coup rapide")
+        tournament_info["rounds"] = []
+        tournament_info["nb_of_played_round"] = 0
+        tournament_info["game_rules"] = input()
+        tournament_info["date"] = str(datetime.now())
+        AppController.create_tournament(tournament_info)
 
+    @staticmethod
+    def create_player_view():
+        player_info = {}
+        print("Vous devez renseigner les informations suivantes:")
+        print("Prénom:")
+        player_info["firstname"] = input()
+        print("Nom")
+        player_info["lastname"] = input()
+        print("Date de naissance:")
+        player_info["birth_date"] = input()
+        print("Genre:")
+        player_info["gender"] = input()
+        print("Classement")
+        player_info["elo"] = int(input())
+        AppController.create_player(player_info)
+
+    @staticmethod
     def enter_results_view():
         pass
 
@@ -27,9 +76,6 @@ class Views:
         tournament_id_user_choice = int(Views.tournament_choice_view())
         round = AppController.generate_tour(tournament_id_user_choice)
         Views.show_generated_round(round)
-
-
-
 
     @staticmethod
     def get_match_id_view(games_list):
@@ -62,7 +108,6 @@ class Views:
             AppController.set_tour_results(matchs_results, round_id, tournament_id_user_choice,
                                            match_id, player_one_score, player_two_score)
 
-
     @staticmethod
     def show_provisional_ranking():
         tournament_id_user_choice = int(Views.tournament_choice_view())
@@ -74,46 +119,30 @@ class Views:
 
     @staticmethod
     def player_choice_view():
-        tournament_id_user_choice = Views.tournament_choice_view()
-        players = AppController.get_player_info(tournament_id_user_choice)
-        # while True:
-        
+        # tournament_id_user_choice = Views.tournament_choice_view()
+        players = AppController.get_player_info()
         for player in players:
-            print(player.firstname.value)
+            print(player["firstname"])
         print("Quel est le joueur qui vous intéresse?")
         player_choice = input()
-        if player_choice in [player.firstname.value for player in players]:
-            return tournament_id_user_choice, player_choice
+        if player_choice in [player["firstname"] for player in players]:
+            return player_choice
             
         print("Votre demande ne correspond pas aux joueurs demandés...")
 
     @staticmethod
     def get_player_info_view():
-        tournament_id_user_choice, player = Views.player_choice_view()
-        print(AppController.get_player_info(tournament_id_user_choice, player))
+        player = Views.player_choice_view()
+        print(AppController.get_player_info(player))
         return
 
     @staticmethod
-    def get_new_elo_view(player_choice):
+    def set_new_elo_view():
+        player = Views.player_choice_view()
         while True:
             print("Quel est le nouvel elo du joueur?")
             new_elo = int(input())
             if new_elo >= 0:
-                return new_elo
-            print("La valeur rentrée n'est pas correcte.")
-
-    @staticmethod
-    def get_tournament_players_view():
-        players = []
-        tournament_id_user_choice = int(Views.tournament_choice_view())
-        while True:
-            player = input() # ressenti: un utilisateur ne rentrera jamais l'id d'un joueur mais son nom...
-            if player.upper() == "Q":
-                if len(players) % 2 != 0:
-                    print(f"Il faut un nombre paire de joueur. Veuillez renseigner un autre joueur."
-                          f"Pour corriger une erreur, rentrer l'id n°1 et relancez la saisie des joueurs")
-                    continue
+                AppController.set_player_elo(player, new_elo)
                 break
-            players.append(int(player))
-        AppController.set_tournament_players(tournament_id_user_choice, players)
-        
+            print("La valeur rentrée n'est pas correcte.")

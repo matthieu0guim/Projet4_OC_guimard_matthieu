@@ -91,11 +91,14 @@ class Tournament(Model):
         return len(cls.__table__) + 1
     
     @classmethod
+    def set_player_id(cls):
+        return len(db.table('players')) + 1
+
+    @classmethod
     def set_tournament_nb_of_round(cls, players, tournament_id):
 
         cls.__table__.update({"nb_rounds": int(len(players) -1)}, where("id") == tournament_id)
-        cls.__table__.update({"players": players})
-
+        
     @classmethod
     def set_players(cls, tournament_id, player_ids):
         cls.__table__.update({'players': player_ids}, where('id') == tournament_id)
@@ -114,7 +117,7 @@ class Tournament(Model):
                          reverse=True)  # on trie cette liste avec l'elo comme critère de trie.
         for player in players:
             setattr(player, 'tournament_score', Tournament.get_tournament_score(
-                player.id.value, tournament_id))
+                player.id.value, tournament_id) or 0)
         return players  # on renvoie la liste triée par l'elo des joueurs participants au tournoi.
 
     @classmethod
@@ -274,7 +277,6 @@ class Tournament(Model):
 
     @classmethod
     def save_results(cls, matchs_results, round_id, tournament_id_user_choice):
-        print(matchs_results)
         db.table('rounds').update({"games": matchs_results},
                                   (where("tournament_id") == tournament_id_user_choice) &
                                   (where("round_id") == round_id))
@@ -290,7 +292,6 @@ class Tournament(Model):
 
     @classmethod
     def change_player_elo(cls, player_choice, new_elo):
-
         P = Query()
         db.table('players').update({'elo': int(new_elo)}, P.firstname == player_choice)
 
@@ -303,7 +304,7 @@ class Tournament(Model):
 
     @classmethod
     def get_all_players(cls):
-        return db.table('players')
+        return db.table('players').all()
 
 
 class Player(Model):
