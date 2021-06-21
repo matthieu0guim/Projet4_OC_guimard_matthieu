@@ -104,6 +104,9 @@ class Views:
                 break
             match_id, player_one_score, player_two_score = list(map(float,
                                                             match_id_user_choice.split(" ")))
+            if player_one_score or player_two_score not in {1, 0, 0.5}:
+                print("Les scores rentrés ne sont pas corrects. Veuillez ressaisir le résultat.")
+                continue
 
             AppController.set_tour_results(matchs_results, round_id, tournament_id_user_choice,
                                            match_id, player_one_score, player_two_score)
