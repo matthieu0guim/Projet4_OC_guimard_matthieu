@@ -41,6 +41,10 @@ class AppController:
         players = Tournament.get_players(tournament_id_user_choice)
         return players
 
+
+
+
+
     @classmethod
     def get_player_info(cls, player_choice=None):
         if not player_choice:
