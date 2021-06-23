@@ -142,10 +142,93 @@ class Tournament(Model):
         round_id = len(db.table('rounds')) + 1
 
         is_first_round = count_rounds == 0
+        match = []
+        players = Tournament.get_players(tournament_id)
         if is_first_round:
             all_possible_games = Tournament.listing_all_possible_games(tournament_id)
             cls.__table__.update({"list_of_possible_games": all_possible_games},
                                  where("id") == tournament_id)
+            top = 0
+            bottom = int(len(players)/2)
+            while top < len(players)/2:
+                player_one_id = players[top].id.value
+                player_two_id = players[bottom].id.value
+                score_one = 0
+                score_two = 0
+                game = Match(player_one_id, player_two_id, score_one, score_two, count_rounds)
+                match.append(game.to_json())
+
+                Match.create({'joueur1': players[top].id.value,
+                            'joueur2': players[bottom].id.value,
+                            'score_one': 0,
+                            'score_two': 0,
+                            'round_id': round_id,
+                            'match_id': len(db.table('matchs')) + 1})
+                top += 1
+                bottom += 1
+        else:
+            nb_of_games = 0
+            nb_of_players = len(players)
+            while nb_of_games < nb_of_players/2:
+                for player in players:
+                    print(player)
+                authorized_game = False
+                player_one = 0
+                player_two = 1
+                while not authorized_game:
+                    player_one_id = players[player_one].id.value
+                    player_two_id = players[player_two].id.value
+                    print(f"[{player_one_id}, {player_two_id}]")
+                    score_one = 0
+                    score_two = 0
+                    if [player_one_id, player_two_id] in db.table('tournaments').search(
+                        where("id") == tournament_id)[0]["list_of_possible_games"]:
+                        to_remove = [player_one_id, player_two_id]
+                        authorized_game = True
+                        db.table('tournaments').search(
+                        where("id") == tournament_id)[0]["list_of_possible_games"].remove(to_remove)
+                        list_of_possible_games = db.table('tournaments').search(
+                        where("id") == tournament_id)[0]["list_of_possible_games"]
+                        db.table('tournaments').update({"list_of_possible_games": list_of_possible_games},
+                                            where("id") == tournament_id)
+                        print("marche")
+                        players.remove(players[player_two])
+                        players.remove(players[player_one])
+                        
+                        
+                    
+                    elif [player_two_id, player_one_id] in db.table('tournaments').search(
+                        where("id") == tournament_id)[0]["list_of_possible_games"]:
+                        to_remove1 = [player_two_id, player_one_id]
+                        authorized_game = True
+                        db.table('tournaments').search(
+                        where("id") == tournament_id)[0]["list_of_possible_games"].remove(to_remove1)
+                        list_of_possible_games = db.table('tournaments').search(
+                        where("id") == tournament_id)[0]["list_of_possible_games"]
+                        db.table('tournaments').update({"list_of_possible_games": list_of_possible_games},
+                                            where("id") == tournament_id)
+                        print("marche")
+                        player_two = 1
+                        players.remove(players[player_two])
+                        players.remove(players[player_one])
+                        
+                    if authorized_game:
+                        game = Match(player_one_id, player_two_id, score_one, score_two, count_rounds)
+                        match.append(game.to_json())
+                        print("dans le deuxième if")
+                        Match.create({'joueur1': player_one_id,
+                                'joueur2': player_two_id,
+                                'score_one': 0,
+                                'score_two': 0,
+                                'round_id': round_id,
+                                'match_id': len(db.table('matchs')) + 1})
+                        nb_of_games += 1
+                        player_two = 1
+                    else:
+                        player_two += 1
+                        
+
+
         Round.create({
             'round_id': round_id,
             'tournament_id': tournament_id,
@@ -156,27 +239,7 @@ class Tournament(Model):
         db.table('tournaments').update(increment('nb_of_played_round'),
                                        where("id") == int(tournament_id))
 
-        players = Tournament.get_players(tournament_id)
-        match = []
-
-        top = 0
-        bottom = int(len(players)/2)
-        while top < len(players)/2:
-            player_one_id = players[top].id.value
-            player_two_id = players[bottom].id.value
-            score_one = 0
-            score_two = 0
-            game = Match(player_one_id, player_two_id, score_one, score_two, count_rounds)
-            match.append(game.to_json())
-
-            Match.create({'joueur1': players[top].id.value,
-                          'joueur2': players[bottom].id.value,
-                          'score_one': 0,
-                          'score_two': 0,
-                          'round_id': round_id,
-                          'match_id': len(db.table('matchs')) + 1})
-            top += 1
-            bottom += 1
+        
 
         db.table('rounds').update({"games": match},
                                   (where("tournament_id") == tournament_id)

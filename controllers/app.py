@@ -42,9 +42,6 @@ class AppController:
         return players
 
 
-
-
-
     @classmethod
     def get_player_info(cls, player_choice=None):
         if not player_choice:
