@@ -104,7 +104,7 @@ class Views:
                 break
             match_id, player_one_score, player_two_score = list(map(float,
                                                             match_id_user_choice.split(" ")))
-            if player_one_score or player_two_score not in {1, 0, 0.5}:
+            if player_one_score + player_two_score != 1:
                 print("Les scores rentrés ne sont pas corrects. Veuillez ressaisir le résultat.")
                 continue
 
@@ -116,9 +116,10 @@ class Views:
         tournament_id_user_choice = int(Views.tournament_choice_view(generating_rounds=False))
         players = AppController.get_provisional_ranking(tournament_id_user_choice)
         for player in players:
-            print(f"Prénom: {player.firstname.value}"
-                  f"| score tournoi: {player.tournament_score}"
-                  f"| elo: {player.elo.value}")
+            print(f"id: {player.id.value}"
+                  f" | Prénom: {player.firstname.value}"
+                  f" | score tournoi: {player.tournament_score}"
+                  f" | elo: {player.elo.value}")
 
     @staticmethod
     def player_choice_view():
