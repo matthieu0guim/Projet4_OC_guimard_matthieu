@@ -1,10 +1,22 @@
+"""
+    This module interacts with the user and send 
+    actions informations to the controller
+"""
 from controllers.app import AppController
 from datetime import datetime
 from time import strftime
 
 class Views:
+    """The class where you find display methods  """
     @staticmethod
     def create_tournament_view():
+        """Interacts with the user to create a tournament
+        First three parameters are optionals
+        If nb_rounds is not informed the default value is 4
+        
+        ... raises:: If less than 8 players are informed it raises
+                    an error and the user is rediricted to main menu
+        """
         players = []
         tournament_info = {}
         print("Vous devez renseigner les informations suivantes:")
@@ -15,7 +27,10 @@ class Views:
         print("Commentaires:")
         tournament_info["description"] = input()
         print("nombre de tours:")
-        tournament_info["nb_rounds"] = int(input())
+        nb_rounds = input()
+        if nb_rounds == "":
+            nb_rounds = 4
+        tournament_info["nb_rounds"] = nb_rounds
         print("Joueurs participant:")
         while True:
             player = int(input())
@@ -36,6 +51,10 @@ class Views:
 
     @staticmethod
     def create_player_view():
+        """Used to enter a new player in database
+        First four parameters are optionals.
+        .. raises:: If the elo field is not informed it raises
+                    an error and the user is rediricted to main menu"""
         player_info = {}
         print("Vous devez renseigner les informations suivantes:")
         print("Prénom:")
@@ -52,6 +71,7 @@ class Views:
 
     @staticmethod
     def show_generated_round(round):
+        """Show generated games for a newly generated round"""
         if round:
             print(round['games'])
             return
@@ -59,11 +79,14 @@ class Views:
 
     @staticmethod
     def tournament_choice_view(generating_rounds=False):
+        """Used to select a tournament   
+        The user enter the id of the wanted tournament
+        
+        ... warning:: must be an integer"""
         tournament_list = AppController.get_tournament_list()
         for tournament in tournament_list.items:
             if generating_rounds:
                 if tournament.ending_date.value == "":
-                    # continue
                     print(f"id: {tournament.id.value}, name: {tournament.name.value}")
             else:
                 print(f"id: {tournament.id.value}, name: {tournament.name.value}")
@@ -73,6 +96,9 @@ class Views:
 
     @staticmethod
     def generate_round_view():
+        """Used to generate a round for an onging tournament
+        If the tournament is over an error message is printed
+        """
         tournament_id_user_choice = int(Views.tournament_choice_view(generating_rounds=True))
         round = AppController.generate_tour(tournament_id_user_choice)
         if not round:
@@ -81,6 +107,11 @@ class Views:
 
     @staticmethod
     def get_match_id_view(games_list):
+        """Used to enter round results
+        The game list is printed on screen and the user have to chose
+        the id of the game.
+        
+        This method is called when the user wants to enter a round results"""
         if not games_list:
             print("La liste des matchs est vide.")
             return
@@ -91,6 +122,13 @@ class Views:
 
     @staticmethod
     def get_round_results_view():
+        """Used to enter a round results.
+        This method prints all the ongoing tournaments.
+        The user choose the id of the wanted tournament.
+        Then the user choose the id of the match and the result.
+        The validity is checked as the sum of each score shall be equal to 1.
+        The user ends entering results by typing q or Q.
+        """
         tournament_id_user_choice = int(Views.tournament_choice_view(generating_rounds=True))
         games_list, round_id = AppController.get_game_list(tournament_id_user_choice)
         if not games_list:
@@ -112,33 +150,52 @@ class Views:
 
     @staticmethod
     def show_provisional_ranking():
+        """Used to print a tournament ranking.
+        Can be used either for an ongoing tournament or a finished one.
+        This method prints all the ongoing tournaments.
+        The user choose the id of the wanted tournament.
+        """
         tournament_id_user_choice = int(Views.tournament_choice_view(generating_rounds=False))
         players = AppController.get_provisional_ranking(tournament_id_user_choice)
-        for player in players:
-            print(f"id: {player.id.value}"
+        for n, player in enumerate(players):
+            print(f"n°{n}"
+                  f"id: {player.id.value}"
                   f" | Prénom: {player.firstname.value}"
                   f" | score tournoi: {player.tournament_score}"
                   f" | elo: {player.elo.value}")
 
     @staticmethod
     def player_choice_view():
+        """Used to consult informations about a player
+        This method prints all player in database.
+        The user must enter the id of the player."""
         players = AppController.get_player_info()
         for player in players:
-            print(player["firstname"])
+            print(
+                f"{player['id']}: "
+                f" {player['firstname']}")
         print("Quel est le joueur qui vous intéresse?")
         player_choice = input()
-        if player_choice in [player["firstname"] for player in players]:
-            return player_choice
-        print("Votre demande ne correspond pas aux joueurs demandés...")
+        try:
+            if int(player_choice) in [player["id"] for player in players]:
+                return int(player_choice)
+        except ValueError:
+            print("Votre demande ne correspond pas aux joueurs affichés...")
 
     @staticmethod
     def get_player_info_view():
+        """Used to consult informations about a player
+        This method calls player_choice_view to print all players in database.
+        Then, it calls the controller to print the data"""
         player = Views.player_choice_view()
         print(AppController.get_player_info(player))
         return
 
     @staticmethod
     def set_new_elo_view():
+        """Used to change a player's elo.
+        This method calls player_choice_view to print all players in database.
+        The user enter an integer as the new value."""
         player = Views.player_choice_view()
         while True:
             print("Quel est le nouvel elo du joueur?")
@@ -150,6 +207,11 @@ class Views:
 
     @staticmethod
     def get_report_view():
+        """Used to print a report about database.
+        The user enter the integer facing his choice.
+        For choice 1 and 3 the user can choose either between alphabetical
+        or rank sorting by entering 'a' or 'c'.
+        """
         tournament_choice = None
         round_choice = 0
         sorting = None
@@ -189,16 +251,24 @@ class Views:
         
     @staticmethod
     def main_menue_view():
-        print("Bienvenue dans le menu principal! Que souhaitez-vous faire? (rentrez le n° de l'action)")
+        """Used in the main.py file to print possible actions for the user."""
+        print("\nBienvenue dans le menu principal! Que souhaitez-vous faire? (rentrez le n° de l'action)\n")
         print(
-            f"1: Créer un tournoi."
-            f"2: Générer un round pour un tournoi en cours?"
-            f"3: Rentrer les résultats d'un round?"
-            f"4: Consulter des tournois ou obtenir un rapport?"
-            f"5: Rentrer un nouveau joueur en base de donnée?"
-            f"6: Consulter les informations d'un joueurs en particulier?"
-            f"7: Modifier le classement d'un joueur?"
-            f"8: Consulter le classement d'un tournois en cours ou fini?"
+            f"1: Créer un tournoi.\n"
+            f"2: Générer un round pour un tournoi en cours?\n"
+            f"3: Rentrer les résultats d'un round?\n"
+            f"4: Consulter des tournois ou obtenir un rapport?\n"
+            f"5: Rentrer un nouveau joueur en base de donnée?\n"
+            f"6: Consulter les informations d'un joueurs en particulier?\n"
+            f"7: Modifier le classement d'un joueur?\n"
+            f"8: Consulter le classement d'un tournois en cours ou fini?\n"
               )
-        user_choice = int(input())
+        user_choice = input()
         return user_choice
+    
+    @staticmethod
+    def error_message_view():
+        """Used to inform the user that his entry is not matching a functionnality."""
+        
+        print(f"\nDésolé mais votre réponse ne décrit pas une action possible.\n"
+              f"Veuillez essayer de nouveau\n")

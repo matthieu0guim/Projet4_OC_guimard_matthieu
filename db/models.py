@@ -363,7 +363,7 @@ class Tournament(Model):
 
     @classmethod
     def get_player_info(cls, player_choice):
-        return db.table('players').get(where('firstname') == player_choice)
+        return db.table('players').get(where('id') == player_choice)
 
     @classmethod
     def get_all_players(cls):
