@@ -1,4 +1,3 @@
-from typing import List
 from controllers.app import AppController
 from datetime import datetime
 from time import strftime
@@ -188,3 +187,18 @@ class Views:
             print(value)
         return
         
+    @staticmethod
+    def main_menue_view():
+        print("Bienvenue dans le menu principal! Que souhaitez-vous faire? (rentrez le n° de l'action)")
+        print(
+            f"1: Créer un tournoi."
+            f"2: Générer un round pour un tournoi en cours?"
+            f"3: Rentrer les résultats d'un round?"
+            f"4: Consulter des tournois ou obtenir un rapport?"
+            f"5: Rentrer un nouveau joueur en base de donnée?"
+            f"6: Consulter les informations d'un joueurs en particulier?"
+            f"7: Modifier le classement d'un joueur?"
+            f"8: Consulter le classement d'un tournois en cours ou fini?"
+              )
+        user_choice = int(input())
+        return user_choice
