@@ -5,6 +5,7 @@
 from controllers.app import AppController
 from datetime import datetime
 from time import strftime
+import pprint
 
 class Views:
     """The class where you find display methods  """
@@ -83,13 +84,16 @@ class Views:
         The user enter the id of the wanted tournament
         
         ... warning:: must be an integer"""
-        tournament_list = AppController.get_tournament_list()
-        for tournament in tournament_list.items:
+        # tournament_list = AppController.get_tournament_list()
+        tournament_list = AppController.get_report(choice=2, choosing=True)
+        for tournament in tournament_list: #.items:
             if generating_rounds:
-                if tournament.ending_date.value == "":
-                    print(f"id: {tournament.id.value}, name: {tournament.name.value}")
+                if tournament['ending_date'] == "":
+                    # print(f"id: {tournament.id.value}, name: {tournament.name.value}")
+                    print(f"id: {tournament['id']}, name: {tournament['name']}")
             else:
-                print(f"id: {tournament.id.value}, name: {tournament.name.value}")
+                # print(f"id: {tournament.id.value}, name: {tournament.name.value}")
+                print(f"id: {tournament['id']}, name: {tournament['name']}")
         print("Quel tournoi cela concerne-t-il?")
         tournament_id_user_choice = input()
         return tournament_id_user_choice
@@ -158,11 +162,12 @@ class Views:
         tournament_id_user_choice = int(Views.tournament_choice_view(generating_rounds=False))
         players = AppController.get_provisional_ranking(tournament_id_user_choice)
         for n, player in enumerate(players):
-            print(f"n°{n}"
+            print(f"n°{n + 1}: "
                   f"id: {player.id.value}"
                   f" | Prénom: {player.firstname.value}"
                   f" | score tournoi: {player.tournament_score}"
                   f" | elo: {player.elo.value}")
+        input()
 
     @staticmethod
     def player_choice_view():
@@ -175,7 +180,7 @@ class Views:
                 f"{player['id']}: "
                 f" {player['firstname']}")
         print("Quel est le joueur qui vous intéresse?")
-        player_choice = input()
+        player_choice = int(input())
         try:
             if int(player_choice) in [player["id"] for player in players]:
                 return int(player_choice)
@@ -188,7 +193,7 @@ class Views:
         This method calls player_choice_view to print all players in database.
         Then, it calls the controller to print the data"""
         player = Views.player_choice_view()
-        print(AppController.get_player_info(player))
+        pprint.pprint(AppController.get_player_info(player))
         return
 
     @staticmethod
@@ -226,27 +231,31 @@ class Views:
         choice = int(input())
         if choice in {1, 3}:
             while True:
-                print("Voulez vous la liste: par ordre alphabétique ou classement?")
+                print(f"Voulez vous que la liste soit triée par:\n -'a': ordre alphabétique \n -'c': classement?")
                 sorting = input()
-                if sorting not in {"alphabétique", "classement"}:
-                    print("La réponse doit être 'alphabétique' ou 'classement'")
-                if sorting in {"alphabétique", "classement"}:
+                if sorting not in {"a", "c"}:
+                    print("La réponse doit être 'a' ou 'c'")
+                if sorting in {"a", "c"}:
                     break
         if choice > 2:
             tournament_choice = int(Views.tournament_choice_view(generating_rounds=False))
         if choice == 5:
-            round_list = [round["name"] for round in AppController.get_report(4, tournament_choice)]
-            for round in round_list:
-                print(f"{round}")
+            round_list = [round for round in AppController.get_report(4, tournament_choice)]
+            for n, round in enumerate(round_list):
+                print(f"{n + 1}: {round[0]}")
             print("Saisissez l'id du round qui vous intéresse:")
             round_choice = int(input())
         
         report = AppController.get_report(choice, tournament_choice, sorting, round_choice)
         if isinstance(report, dict):
             print("matchs joués:",report["games"])
+            input()
             return
         for value in report:
-            print(value)
+            pprint.pprint(value)
+            print(f"\n")
+            # print(value)
+        input()
         return
         
     @staticmethod

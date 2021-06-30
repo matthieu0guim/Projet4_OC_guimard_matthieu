@@ -1,3 +1,10 @@
+"""
+This module is the one communicating with the database.
+It is called by the controllers and performs either creation/updates 
+or return information from the database
+
+The database used here is TinyDB
+"""
 import itertools
 import json
 
@@ -14,7 +21,8 @@ class Field:
 
 
 class Item:
-
+    """ Turns dictionnary keys into attributs
+    """
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             # transforme un dictionnaire en objets d'une classe
@@ -32,7 +40,7 @@ class Item:
 
 
 class Collection:
-
+    """Take a dictionnary in argument and turns items into attributes and corresponding values"""
     def __init__(self, data=None):
         self._items = []
         for item in data:
@@ -44,7 +52,7 @@ class Collection:
 
 
 class TournamentCollection(Collection):
-
+    """Does the same that Collection but for tournaments"""
     def __init__(self, data=None):
         self._items = []
         for item in data:
@@ -56,7 +64,7 @@ class TournamentCollection(Collection):
 
 
 class RoundCollection(Collection):
-
+    """Does the same that Colelction but for Rounds"""
     def __init__(self, data=None):
         self._items = []
         for item in data:
@@ -72,6 +80,7 @@ db = TinyDB('db.json')
 
 
 class Model:
+    """Used as a parent class for orther classes that need to write into the database"""
     def __init__(cls):
         pass
 
@@ -81,6 +90,7 @@ class Model:
 
 
 class Tournament(Model):
+    """Contains all methods used in database relations"""
     __table__ = db.table('tournaments')
 
     def __init__(self):
@@ -88,23 +98,27 @@ class Tournament(Model):
 
     @classmethod
     def set_tournament_id(cls):
+        """Automatically returns the id of a new tournament 
+        It measures the lengh of the table 'tournaments' in the database
+        """
         return len(cls.__table__) + 1
     
     @classmethod
     def set_player_id(cls):
+        """Automatically returns the id of a new tournament 
+        It measures the lengh of the table 'tournaments' in the database
+        """
         return len(db.table('players')) + 1
-
-    @classmethod
-    def set_tournament_nb_of_round(cls, players, tournament_id):
-
-        cls.__table__.update({"nb_rounds": int(len(players) -1)}, where("id") == tournament_id)
         
-    @classmethod
-    def set_players(cls, tournament_id, player_ids):
-        cls.__table__.update({'players': player_ids}, where('id') == tournament_id)
 
     @classmethod
     def get_players(cls, tournament_id):
+        """Store players competing in the wished tournament
+        It first get the dictionnary of the tournament in the table 'tournaments'
+        Secondly it creates a list composed of Player's objects
+        Then it sorts this list according to the tournament_score of each player.
+        In case of equality it takes the elo rank.
+        """
         P = Query()
         tournament = cls.__table__.search(where('id') == tournament_id)
 
@@ -122,7 +136,11 @@ class Tournament(Model):
 
     @classmethod
     def listing_all_possible_games(cls, tournament_id):
-
+        """Make a list with all possible game configurations
+        This is made with a list of all tournament players ids
+        and the method combinations from itertools.
+        Then cases as [[P1 vs P2], [P2 vs P1]] are avoided
+        """
         players = [player.id.value for player in Tournament.get_players(tournament_id)]
         setattr(Tournament, 'list_of_possible_games', [
                 game for game in itertools.combinations(players, 2)])
@@ -130,6 +148,16 @@ class Tournament(Model):
 
     @classmethod
     def generate_round(cls, tournament_id):
+        """Generate a round according to the tournament ranking and the if it is the first round or not
+        Two cases are presents here:
+            - if it is the first round of the tournament, one take the sorted list of players
+              and split it into two lists. From these two lists each players at the same index of each list
+              are confronted.
+            - if it is not the first round, one take the sorted list of players. 
+              The first of the list encounters the second, the third encounters the fourth and so on
+              If the generated game has already occured. For exemple the first vs the second.
+              The second of the list shall be replaced by the third and so on until a configuration is found that 
+              haven't already been played."""
         nb_of_played_round = db.table('tournaments').get(
             where('id') == tournament_id)['nb_of_played_round']
         nb_rounds = db.table('tournaments').get(
@@ -248,13 +276,14 @@ class Tournament(Model):
                                        where("id") == tournament_id)
         return round
 
-    @classmethod
-    def get_tournament_list(cls):
-        tournament_list = Collection(cls.__table__.search(where('id') != 0))
-        return tournament_list
+    # @classmethod
+    # def get_tournament_list(cls):
+    #     tournament_list = Collection(cls.__table__.search(where('id') != 0))
+    #     return tournament_list
 
     @classmethod
     def get_game_list(cls, tournament_id_user_choice):
+        """Returns the list of games for the ongoing round in the wished tournament"""
         T = Query()
         chosen_tournament = Collection(cls.__table__.search(
             where('id') == tournament_id_user_choice))
@@ -281,7 +310,11 @@ class Tournament(Model):
                       player_one_score,
                       player_two_score,
                       matchs_results):
-
+        """Updates the results of a round in the database 
+        The update is perfomed either in the table rounds and the table matchs
+        The method is thought so the user can re-enter results for a game if previous ones were incorrect.
+        The method also check if scores are possible as the sum of each player score is expected to be 1
+        """
         player_one_id = db.table('matchs').search(where("match_id") == int(match_id))[0]["joueur1"]
         player_two_id = db.table('matchs').search(where("match_id") == int(match_id))[0]["joueur2"]
 
@@ -331,6 +364,8 @@ class Tournament(Model):
 
     @classmethod
     def save_results(cls, matchs_results, round_id, tournament_id_user_choice):
+        """Updates a round results in the table 'rounds'
+        It also give an ending date to the corresponding round"""
         db.table('rounds').update({"games": matchs_results},
                                   (where("tournament_id") == tournament_id_user_choice) &
                                   (where("round_id") == round_id))
@@ -347,6 +382,9 @@ class Tournament(Model):
 
     @classmethod
     def get_tournament_score(cls, player_id, tournament_id):
+        """Calculates the tournament score of a player in a wished tournament
+        The method identify all games the player has played in the tournament
+        and sums all player's score for each."""
         if not db.table('scores').search(where('tournament_id') == tournament_id):
             return 0
 
@@ -358,23 +396,37 @@ class Tournament(Model):
 
     @classmethod
     def change_player_elo(cls, player_choice, new_elo):
+        """Changes the elo of a player in the table 'players'"""
         P = Query()
-        db.table('players').update({'elo': int(new_elo)}, P.firstname == player_choice)
+        db.table('players').update({'elo': new_elo}, P.id == player_choice)
 
     @classmethod
     def get_player_info(cls, player_choice):
-        return db.table('players').get(where('id') == player_choice)
+        """Return the corresponding dictionnary of the wished player"""
+        player = db.table('players').get(where('id') == player_choice)
+        player_display = [f"Prénom: {player['firstname']}",
+                          f"Nom: {player['lastname']}",
+                          f"Date de naissance: {player['birth_date']}",
+                          f"Classement elo: {player['elo']}",
+                          f"Sex: {player['gender']}"]
+        return player_display
 
     @classmethod
     def get_all_players(cls):
+        """"Return a list with all components of the 'players' table"""
         return db.table('players').all()
     
     @classmethod
     def get_all_tournaments(cls):
+        """"Return a list with all components of the 'tournaments' table"""
         return db.table('tournaments').all()
 
     @classmethod
     def get_tournament_rounds(cls, tournament_choice):
+        """"
+        Return a list with all components of the 'rounds' table with 
+        the same tournament_id that the value of the parameter tournament_choice
+        """
         return db.table('rounds').search(where('tournament_id') == tournament_choice)
     
 
