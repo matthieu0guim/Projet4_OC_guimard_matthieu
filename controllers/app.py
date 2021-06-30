@@ -79,14 +79,6 @@ class AppController:
         """
         Tournament.change_player_elo(player, new_elo)
 
-    # @classmethod
-    # def get_tournament_list(cls):
-    #     """Return all tournaments presents in database
-    #     It returns the all dictionary about each tournament"""
-    #     # tournament_list = Tournament.get_tournament_list()
-    #     tournament_list = Tournament.get_all_tournaments()
-    #     return tournament_list
-
     @classmethod
     def get_game_list(cls, tournament_id):
         """Return the games list of the ongoing round for the specified tournament"""

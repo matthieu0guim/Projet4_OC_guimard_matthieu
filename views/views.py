@@ -27,7 +27,7 @@ class Views:
         tournament_info["location"] = input()
         print("Commentaires:")
         tournament_info["description"] = input()
-        print("nombre de tours:")
+        print("nombre de tours: (4 par défaut)")
         nb_rounds = input()
         if nb_rounds == "":
             nb_rounds = 4
@@ -84,15 +84,12 @@ class Views:
         The user enter the id of the wanted tournament
         
         ... warning:: must be an integer"""
-        # tournament_list = AppController.get_tournament_list()
         tournament_list = AppController.get_report(choice=2, choosing=True)
         for tournament in tournament_list: #.items:
             if generating_rounds:
                 if tournament['ending_date'] == "":
-                    # print(f"id: {tournament.id.value}, name: {tournament.name.value}")
                     print(f"id: {tournament['id']}, name: {tournament['name']}")
             else:
-                # print(f"id: {tournament.id.value}, name: {tournament.name.value}")
                 print(f"id: {tournament['id']}, name: {tournament['name']}")
         print("Quel tournoi cela concerne-t-il?")
         tournament_id_user_choice = input()
@@ -119,6 +116,7 @@ class Views:
         if not games_list:
             print("La liste des matchs est vide.")
             return
+        print(f"\n")
         for game in games_list.items:
             print(f"{game.match_id.value}: {game.joueur1.value} vs {game.joueur2.value}")
         match_id_user_choice = input()
@@ -141,6 +139,7 @@ class Views:
         matchs_results = []
         while True:
             match_id_user_choice = Views.get_match_id_view(games_list)
+            print(f"Vous pouvez quitter la saisie des résultats en rentrant 'Q'.")
             if match_id_user_choice.upper() == "Q":
                 break
             match_id, player_one_score, player_two_score = list(map(float,
@@ -254,7 +253,6 @@ class Views:
         for value in report:
             pprint.pprint(value)
             print(f"\n")
-            # print(value)
         input()
         return
         

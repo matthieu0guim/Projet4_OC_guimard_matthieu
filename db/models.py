@@ -202,8 +202,6 @@ class Tournament(Model):
                 nb_of_players = len(players)
                 try:
                     while nb_of_games < nb_of_players/2:
-                        for player in copy_players:
-                            print(player)
                         authorized_game = False
                         player_one = 0
                         player_two = 1
@@ -275,11 +273,6 @@ class Tournament(Model):
         db.table('tournaments').update({'rounds': rounds},
                                        where("id") == tournament_id)
         return round
-
-    # @classmethod
-    # def get_tournament_list(cls):
-    #     tournament_list = Collection(cls.__table__.search(where('id') != 0))
-    #     return tournament_list
 
     @classmethod
     def get_game_list(cls, tournament_id_user_choice):
