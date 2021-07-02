@@ -1,11 +1,11 @@
 """
-    This module interacts with the user and send 
+    This module interacts with the user and send
     actions informations to the controller
 """
 from controllers.app import AppController
 from datetime import datetime
-from time import strftime
 import pprint
+
 
 class Views:
     """The class where you find display methods  """
@@ -14,7 +14,7 @@ class Views:
         """Interacts with the user to create a tournament
         First three parameters are optionals
         If nb_rounds is not informed the default value is 4
-        
+
         ... raises:: If less than 8 players are informed it raises
                     an error and the user is rediricted to main menu
         """
@@ -80,12 +80,12 @@ class Views:
 
     @staticmethod
     def tournament_choice_view(generating_rounds=False):
-        """Used to select a tournament   
+        """Used to select a tournament
         The user enter the id of the wanted tournament
-        
+
         ... warning:: must be an integer"""
         tournament_list = AppController.get_report(choice=2, choosing=True)
-        for tournament in tournament_list: #.items:
+        for tournament in tournament_list:
             if generating_rounds:
                 if tournament['ending_date'] == "":
                     print(f"id: {tournament['id']}, name: {tournament['name']}")
@@ -111,12 +111,12 @@ class Views:
         """Used to enter round results
         The game list is printed on screen and the user have to chose
         the id of the game.
-        
+
         This method is called when the user wants to enter a round results"""
         if not games_list:
             print("La liste des matchs est vide.")
             return
-        print(f"\n")
+        print("\n")
         for game in games_list.items:
             print(f"{game.match_id.value}: {game.joueur1.value} vs {game.joueur2.value}")
         match_id_user_choice = input()
@@ -139,11 +139,11 @@ class Views:
         matchs_results = []
         while True:
             match_id_user_choice = Views.get_match_id_view(games_list)
-            print(f"Vous pouvez quitter la saisie des résultats en rentrant 'Q'.")
+            print("Vous pouvez quitter la saisie des résultats en rentrant 'Q'.")
             if match_id_user_choice.upper() == "Q":
                 break
             match_id, player_one_score, player_two_score = list(map(float,
-                                                            match_id_user_choice.split(" ")))
+                                                                match_id_user_choice.split(" ")))
             if player_one_score + player_two_score != 1:
                 print("Les scores rentrés ne sont pas corrects. Veuillez ressaisir le résultat.")
                 continue
@@ -220,17 +220,18 @@ class Views:
         round_choice = 0
         sorting = None
         print(
-            f"Quel rapport voulez-vous?:\n"
-            f"1: La liste des joueurs en base de données?\n"
-            f"2: La liste des tournois?\n"
-            f"3: La liste des joueurs d'un tournoi en particulier?\n"
-            f"4: La liste des rounds d'un tournoi en particulier?\n"
-            f"5: La liste des matchs d'un round?"
+            "Quel rapport voulez-vous?:\n"
+            "1: La liste des joueurs en base de données?\n"
+            "2: La liste des tournois?\n"
+            "3: La liste des joueurs d'un tournoi en particulier?\n"
+            "4: La liste des rounds d'un tournoi en particulier?\n"
+            "5: La liste des matchs d'un round?"
         )
         choice = int(input())
         if choice in {1, 3}:
             while True:
-                print(f"Voulez vous que la liste soit triée par:\n -'a': ordre alphabétique \n -'c': classement?")
+                print("Voulez vous que la liste soit triée par:\n"
+                      "-'a': ordre alphabétique \n -'c': classement?")
                 sorting = input()
                 if sorting not in {"a", "c"}:
                     print("La réponse doit être 'a' ou 'c'")
@@ -244,38 +245,39 @@ class Views:
                 print(f"{n + 1}: {round[0]}")
             print("Saisissez l'id du round qui vous intéresse:")
             round_choice = int(input())
-        
+
         report = AppController.get_report(choice, tournament_choice, sorting, round_choice)
         if isinstance(report, dict):
-            print("matchs joués:",report["games"])
+            print(f"matchs joués: {report['games']}")
             input()
             return
         for value in report:
             pprint.pprint(value)
-            print(f"\n")
+            print("\n")
         input()
         return
-        
+
     @staticmethod
     def main_menue_view():
         """Used in the main.py file to print possible actions for the user."""
-        print("\nBienvenue dans le menu principal! Que souhaitez-vous faire? (rentrez le n° de l'action)\n")
+        print("\nBienvenue dans le menu principal! Que souhaitez-vous faire?"
+              "(rentrez le n° de l'action)\n")
         print(
-            f"1: Créer un tournoi.\n"
-            f"2: Générer un round pour un tournoi en cours?\n"
-            f"3: Rentrer les résultats d'un round?\n"
-            f"4: Consulter des tournois ou obtenir un rapport?\n"
-            f"5: Rentrer un nouveau joueur en base de donnée?\n"
-            f"6: Consulter les informations d'un joueurs en particulier?\n"
-            f"7: Modifier le classement d'un joueur?\n"
-            f"8: Consulter le classement d'un tournois en cours ou fini?\n"
+            "1: Créer un tournoi.\n"
+            "2: Générer un round pour un tournoi en cours?\n"
+            "3: Rentrer les résultats d'un round?\n"
+            "4: Consulter des tournois ou obtenir un rapport?\n"
+            "5: Rentrer un nouveau joueur en base de donnée?\n"
+            "6: Consulter les informations d'un joueurs en particulier?\n"
+            "7: Modifier le classement d'un joueur?\n"
+            "8: Consulter le classement d'un tournois en cours ou fini?\n"
               )
         user_choice = input()
         return user_choice
-    
+
     @staticmethod
     def error_message_view():
         """Used to inform the user that his entry is not matching a functionnality."""
-        
-        print(f"\nDésolé mais votre réponse ne décrit pas une action possible.\n"
-              f"Veuillez essayer de nouveau\n")
+
+        print("\nDésolé mais votre réponse ne décrit pas une action possible.\n"
+              "Veuillez essayer de nouveau\n")

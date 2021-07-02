@@ -1,6 +1,6 @@
 """
 This module is the one communicating with the database.
-It is called by the controllers and performs either creation/updates 
+It is called by the controllers and performs either creation/updates
 or return information from the database
 
 The database used here is TinyDB
@@ -13,6 +13,7 @@ from tinydb import TinyDB, where, Query
 from tinydb.operations import increment, add
 from copy import deepcopy
 
+
 class Field:
 
     def __init__(self, key, value):
@@ -21,8 +22,7 @@ class Field:
 
 
 class Item:
-    """ Turns dictionnary keys into attributs
-    """
+    """ Turns dictionnary keys into attributs"""
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             # transforme un dictionnaire en objets d'une classe
@@ -98,18 +98,17 @@ class Tournament(Model):
 
     @classmethod
     def set_tournament_id(cls):
-        """Automatically returns the id of a new tournament 
+        """Automatically returns the id of a new tournament
         It measures the lengh of the table 'tournaments' in the database
         """
         return len(cls.__table__) + 1
-    
+
     @classmethod
     def set_player_id(cls):
-        """Automatically returns the id of a new tournament 
+        """Automatically returns the id of a new tournament
         It measures the lengh of the table 'tournaments' in the database
         """
         return len(db.table('players')) + 1
-        
 
     @classmethod
     def get_players(cls, tournament_id):
@@ -151,12 +150,14 @@ class Tournament(Model):
         """Generate a round according to the tournament ranking and the if it is the first round or not
         Two cases are presents here:
             - if it is the first round of the tournament, one take the sorted list of players
-              and split it into two lists. From these two lists each players at the same index of each list
+              and split it into two lists.
+              From these two lists each players at the same index of each list
               are confronted.
-            - if it is not the first round, one take the sorted list of players. 
+            - if it is not the first round, one take the sorted list of players.
               The first of the list encounters the second, the third encounters the fourth and so on
               If the generated game has already occured. For exemple the first vs the second.
-              The second of the list shall be replaced by the third and so on until a configuration is found that 
+              The second of the list shall be replaced by the third
+              and so on until a configuration is found that
               haven't already been played."""
         nb_of_played_round = db.table('tournaments').get(
             where('id') == tournament_id)['nb_of_played_round']
@@ -187,11 +188,11 @@ class Tournament(Model):
                 match.append(game.to_json())
 
                 Match.create({'joueur1': players[top].id.value,
-                            'joueur2': players[bottom].id.value,
-                            'score_one': 0,
-                            'score_two': 0,
-                            'round_id': round_id,
-                            'match_id': len(db.table('matchs')) + 1})
+                              'joueur2': players[bottom].id.value,
+                              'score_one': 0,
+                              'score_two': 0,
+                              'round_id': round_id,
+                              'match_id': len(db.table('matchs')) + 1})
                 top += 1
                 bottom += 1
         else:
@@ -211,35 +212,40 @@ class Tournament(Model):
                             score_one = 0
                             score_two = 0
                             if [player_one_id, player_two_id] in db.table('tournaments').search(
-                                where("id") == tournament_id)[0]["list_of_possible_games"]:
+                                    where("id") == tournament_id)[0]["list_of_possible_games"]:
                                 authorized_game = True
                                 ids.append([player_one_id, player_two_id])
                                 copy_players.remove(copy_players[player_two])
                                 copy_players.remove(copy_players[player_one])
 
                             elif [player_two_id, player_one_id] in db.table('tournaments').search(
-                                where("id") == tournament_id)[0]["list_of_possible_games"]:
+                                    where("id") == tournament_id)[0]["list_of_possible_games"]:
                                 authorized_game = True
                                 ids.append([player_two_id, player_one_id])
                                 copy_players.remove(copy_players[player_two])
                                 copy_players.remove(copy_players[player_one])
                             if authorized_game:
-                                game = Match(player_one_id, player_two_id, score_one, score_two, count_rounds)
+                                game = Match(player_one_id,
+                                             player_two_id,
+                                             score_one,
+                                             score_two,
+                                             count_rounds)
                                 match.append(game.to_json())
                                 nb_of_games += 1
                                 player_two = 1
                                 if len(match) == 4:
                                     for game in ids:
                                         Match.create({'joueur1': game[0],
-                                        'joueur2': game[1],
-                                        'score_one': 0,
-                                        'score_two': 0,
-                                        'round_id': round_id,
-                                        'match_id': len(db.table('matchs')) + 1})
+                                                      'joueur2': game[1],
+                                                      'score_one': 0,
+                                                      'score_two': 0,
+                                                      'round_id': round_id,
+                                                      'match_id': len(db.table('matchs')) + 1})
 
                                         id_players = game
-                                        db.table('tournaments').search(
-                                            where("id") == tournament_id)[0]["list_of_possible_games"].remove(id_players)
+                                        to_remove = db.table('tournaments').search(
+                                            where("id") == tournament_id)
+                                        to_remove[0]["list_of_possible_games"].remove(id_players)
                                     break
                             else:
                                 player_two += 1
@@ -281,13 +287,10 @@ class Tournament(Model):
         chosen_tournament = Collection(cls.__table__.search(
             where('id') == tournament_id_user_choice))
 
-        
-        
-
         rounds = RoundCollection(db.table('rounds').search(
             where("tournament_id") == tournament_id_user_choice))
-
-        round_id = rounds.items[chosen_tournament.items[0].nb_of_played_round.value - 1].round_id.value
+        round_items = rounds.items[chosen_tournament.items[0].nb_of_played_round.value - 1]
+        round_id = round_items.round_id.value
         if len(rounds.items) == 0:
             return [], None
 
@@ -303,10 +306,13 @@ class Tournament(Model):
                       player_one_score,
                       player_two_score,
                       matchs_results):
-        """Updates the results of a round in the database 
-        The update is perfomed either in the table rounds and the table matchs
-        The method is thought so the user can re-enter results for a game if previous ones were incorrect.
-        The method also check if scores are possible as the sum of each player score is expected to be 1
+        """Updates the results of a round in the database
+        The update is perfomed either
+        in the table rounds and the table matchs
+        The method is thought so the user can re-enter results
+        for a game if previous ones were incorrect.
+        The method also check if scores are possible
+        as the sum of each player score is expected to be 1
         """
         player_one_id = db.table('matchs').search(where("match_id") == int(match_id))[0]["joueur1"]
         player_two_id = db.table('matchs').search(where("match_id") == int(match_id))[0]["joueur2"]
@@ -328,11 +334,14 @@ class Tournament(Model):
 
         game = Match(player_one_id, player_two_id, player_one_score, player_two_score, match_id)
 
-        if db.table('scores').get((where('tournament_id') == tournament_id) & (where("player_id") == player_one_id)):
-            db.table('scores').update(add("score", player_one_score), (where('player_id') == player_one_id) & 
-                                                                       (where('tournament_id') == tournament_id))
-            db.table('scores').update(add("score", player_two_score), (where('player_id') == player_two_id) & 
-                                                                       (where('tournament_id') == tournament_id))
+        if db.table('scores').get((where('tournament_id') == tournament_id) &
+                                  (where("player_id") == player_one_id)):
+            db.table('scores').update(add("score", player_one_score),
+                                      (where('player_id') == player_one_id) &
+                                      (where('tournament_id') == tournament_id))
+            db.table('scores').update(add("score", player_two_score),
+                                      (where('player_id') == player_two_id) &
+                                      (where('tournament_id') == tournament_id))
         else:
             Score.create({
                 "player_id": player_one_id,
@@ -370,8 +379,8 @@ class Tournament(Model):
             db.table('tournaments').update({"ending_date": str(datetime.now())})
 
         db.table('rounds').update({"ending_date": str(datetime.now())},
-                                    (where("tournament_id") == tournament_id_user_choice) & 
-                                    (where("round_id") == round_id))
+                                  (where("tournament_id") == tournament_id_user_choice) &
+                                  (where("round_id") == round_id))
 
     @classmethod
     def get_tournament_score(cls, player_id, tournament_id):
@@ -381,9 +390,9 @@ class Tournament(Model):
         if not db.table('scores').search(where('tournament_id') == tournament_id):
             return 0
 
-        tournament_score = db.table('scores').get((where('player_id') == player_id) & 
-                                                    (where('tournament_id') == tournament_id))
-        if tournament_score == None:
+        tournament_score = db.table('scores').get((where('player_id') == player_id) &
+                                                  (where('tournament_id') == tournament_id))
+        if tournament_score is None:
             return 0
         return tournament_score["score"]
 
@@ -408,7 +417,7 @@ class Tournament(Model):
     def get_all_players(cls):
         """"Return a list with all components of the 'players' table"""
         return db.table('players').all()
-    
+
     @classmethod
     def get_all_tournaments(cls):
         """"Return a list with all components of the 'tournaments' table"""
@@ -417,13 +426,17 @@ class Tournament(Model):
     @classmethod
     def get_tournament_rounds(cls, tournament_choice):
         """"
-        Return a list with all components of the 'rounds' table with 
+        Return a list with all components of the 'rounds' table with
         the same tournament_id that the value of the parameter tournament_choice
         """
         return db.table('rounds').search(where('tournament_id') == tournament_choice)
-    
+
     @classmethod
-    def get_report(cls, choice, tournament_choice=None, sorting=None, round_choice=None, choosing=None):
+    def get_report(cls, choice,
+                   tournament_choice=None,
+                   sorting=None,
+                   round_choice=None,
+                   choosing=None):
         report = []
         returned_report = []
         if choice == 1:
@@ -452,13 +465,14 @@ class Tournament(Model):
                                         f"id des tours déjà joués: {value['rounds']}",
                                         f"Règles des partie: {value['game_rules']}",
                                         f"Date de début: {value['begin_date']}",
-                                        f"Date de fin: {value['ending_date']}"]
-                )
+                                        f"Date de fin: {value['ending_date']}"])
         if choice == 3:
             if sorting == "a":
-                report = sorted(Tournament.get_players(tournament_choice), key=lambda x: x.firstname.value.lower())
+                report = sorted(Tournament.get_players(tournament_choice),
+                                key=lambda x: x.firstname.value.lower())
             if sorting == "c":
-                report = sorted(Tournament.get_players(tournament_choice) , key=lambda x: x.elo.value, reverse=True)
+                report = sorted(Tournament.get_players(tournament_choice),
+                                key=lambda x: x.elo.value, reverse=True)
             for value in report:
                 returned_report.append([f"Prénom: {value.firstname.value}",
                                         f"Nom: {value.lastname.value}",
@@ -485,8 +499,6 @@ class Tournament(Model):
                 if value["name"] == f"Round {round_choice}":
                     returned_report = value
         return returned_report
-
-
 
 
 class Player(Model):
@@ -539,4 +551,3 @@ class Score(Model):
         self.tournament_id = tournament_id
         self.player_id = player_id
         self.score = score
-        

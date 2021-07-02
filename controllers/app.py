@@ -4,10 +4,8 @@ the correct methods in the model.
 """
 from db.models import Tournament, Player
 
-from copy import deepcopy
 
 class AppController:
-    
     _current_tournament = None
 
     @classmethod
@@ -18,7 +16,7 @@ class AppController:
         id = Tournament.set_tournament_id()
         attrs["id"] = id
         Tournament.create(attrs)
-    
+
     @classmethod
     def create_player(cls, attrs):
         """Create a new player in database
@@ -46,8 +44,8 @@ class AppController:
         player_one_score/player_two_score are the resuls of the match refered by match_id
         """
         Tournament.enter_results(tournament_id_user_choice, round_id,
-                                    match_id, player_one_score,
-                                    player_two_score, matchs_results)
+                                 match_id, player_one_score,
+                                 player_two_score, matchs_results)
         Tournament.save_results(matchs_results, round_id, tournament_id_user_choice)
 
     @classmethod
@@ -57,7 +55,6 @@ class AppController:
         """
         players = Tournament.get_players(tournament_id_user_choice)
         return players
-
 
     @classmethod
     def get_player_info(cls, player_choice=None):
@@ -70,7 +67,6 @@ class AppController:
             return players
         player_info = Tournament.get_player_info(player_choice)
         return player_info
-        
 
     @classmethod
     def set_player_elo(cls, player, new_elo):
@@ -85,7 +81,11 @@ class AppController:
         return Tournament.get_game_list(tournament_id)
 
     @classmethod
-    def get_report(cls, choice=0, tournament_choice=None, sorting=None, round_choice=None, choosing=None):
+    def get_report(cls, choice=0,
+                   tournament_choice=None,
+                   sorting=None,
+                   round_choice=None,
+                   choosing=None):
         """Return informations about a required subject
         5 kind of reports are possible:
                 - All players in database sorted alphabetically or by rank
